@@ -1,0 +1,137 @@
+-- This SQL project analyzes data from a digital media store database to answer relevant questions about customer demographics, sales statistics, employee information, and media insights.
+-- The database contains 11 tables with multiple fields in each table.
+
+
+-- How many customers live in the United States?
+SELECT COUNT(*)
+FROM customers
+WHERE Country = 'USA';
+
+-- Which customers do not live in the United States?
+SELECT CustomerId, FirstName, LastName, Country
+FROM customers
+WHERE Country != 'USA';
+
+-- Which customers live in South America?
+SELECT CustomerId, FirstName, LastName, Country
+FROM customers
+WHERE Country = 'Brazil'
+OR Country = 'Argentina'
+OR Country = 'Chile';
+
+-- How much money has each customer spent in total?
+SELECT inv.CustomerId, cust.FirstName, cust.LastName, SUM(inv.Total) AS total_spent
+FROM invoices inv
+JOIN customers cust
+ON inv.CustomerId = cust.CustomerId
+GROUP BY inv.CustomerId;
+
+-- Which customer has spent the most money?
+SELECT inv.CustomerId, cust.FirstName, cust.LastName, SUM(inv.Total) AS total_spent
+FROM invoices inv
+JOIN customers cust
+ON inv.CustomerId = cust.CustomerId
+GROUP BY inv.CustomerId, cust.FirstName, cust.LastName
+ORDER BY total_spent DESC
+LIMIT 1;
+
+-- Finding the invoices of customers who are from Brazil.
+SELECT cust.FirstName, cust.LastName, inv.InvoiceId, inv.InvoiceDate, inv.BillingCountry
+FROM customers cust
+JOIN invoices inv
+ON cust.CustomerId = inv.CustomerId
+WHERE cust.Country = 'Brazil';
+
+-- Showing the employees who are Sales Agents.
+SELECT EmployeeId, FirstName, LastName, Title
+FROM employees
+WHERE Title = 'Sales Support Agent';
+
+-- Finding a unique/distinct list of billing countries from the Invoice table.
+SELECT DISTINCT BillingCountry
+FROM invoices;
+
+-- Showing the invoices associated with each sales agent.
+SELECT emp.Title, emp.FirstName, emp.LastName, inv.InvoiceId, inv.InvoiceDate, inv.BillingCountry
+FROM employees emp
+JOIN customers cust
+ON emp.EmployeeId = cust.SupportRepId
+JOIN invoices inv
+ON cust.CustomerId = inv.CustomerId;
+
+-- Showing the Invoice Total, Customer name, Country, and Sales Agent name for all invoices and customers.
+SELECT inv.Total, cust.FirstName, cust.LastName, cust.Country, emp.Title, emp.FirstName, emp.LastName
+FROM employees emp
+JOIN customers cust
+ON emp.EmployeeId = cust.SupportRepId
+JOIN invoices inv
+ON cust.CustomerId = inv.CustomerId;
+
+-- How many Invoices were there in 2009?
+SELECT COUNT(*)
+FROM invoices
+WHERE InvoiceDate LIKE '2009%';
+
+-- What are the total sales for 2009?
+SELECT ROUND(SUM(Total), 2) AS total_sales
+FROM invoices
+WHERE InvoiceDate LIKE '2009%';
+
+-- Showing the purchased track name with each invoice line ID.
+SELECT tr.Name, inv.InvoiceLineId
+FROM invoice_items inv
+JOIN tracks tr
+ON inv.TrackId = tr.TrackId;
+
+-- Showing the purchased track name AND artist name with each invoice line ID.
+SELECT tr.Name AS track_name, art.Name AS artist_name, inv.InvoiceLineId
+FROM invoice_items inv
+JOIN tracks tr
+ON inv.TrackId = tr.TrackId
+JOIN albums al
+ON tr.AlbumId = al.AlbumId
+JOIN artists art
+ON al.ArtistId = art.ArtistId;
+
+-- Showing all the Tracks, including each of their Album names, Media types, and Genres.
+SELECT tr.Name AS track_name, al.Title AS album_name, mt.Name AS media_type, g.Name AS genre
+FROM tracks tr
+JOIN albums al
+ON tr.AlbumId = al.AlbumId
+JOIN media_types mt
+ON tr.MediaTypeId = mt.MediaTypeId
+JOIN genres g
+ON tr.GenreId = g.GenreId;
+
+-- Showing the total sales made by each Sales Agent.
+SELECT emp.FirstName, emp.LastName, ROUND(SUM(inv.Total), 2) AS total_sales
+FROM employees emp
+JOIN customers cust
+ON emp.EmployeeId = cust.SupportRepId
+JOIN invoices inv
+ON cust.CustomerId = inv.CustomerId
+WHERE emp.Title = 'Sales Support Agent'
+GROUP BY emp.FirstName, emp.LastName;
+
+-- Which sales agent made the most money in sales in 2009?
+SELECT emp.FirstName, emp.LastName, ROUND(SUM(inv.Total), 2) AS total_sales
+FROM employees emp
+JOIN customers cust
+ON emp.EmployeeId = cust.SupportRepId
+JOIN invoices inv
+ON cust.CustomerId = inv.CustomerId
+WHERE emp.Title = 'Sales Support Agent'
+AND inv.InvoiceDate LIKE '2009%'
+GROUP BY emp.FirstName, emp.LastName
+ORDER BY total_sales DESC
+LIMIT 1;
+
+-- How many times does each track appear in all playlists combined?
+SELECT tr.Name AS track_name, COUNT(*) AS occurances_in_playlists
+FROM tracks tr
+JOIN playlist_track pt
+ON tr.TrackId = pt.TrackId
+JOIN playlists pl
+ON pt.PlaylistId = pl.PlaylistId
+GROUP BY track_name
+ORDER BY occurances_in_playlists DESC;
